@@ -1,0 +1,52 @@
+{
+    "ui": {
+        "theme": "GitHub"
+    },
+    "model": {
+        "name": "gemini-2.5-flash-lite",
+        "maxSessionTurns": 20,
+        "summarizeToolOutput": {
+            "run_shell_command": {
+                "tokenBudget": 5000
+            }
+        }
+    },
+    "tools": {
+        "core": [
+            "run_shell_command(ls)",
+            "run_shell_command(git commit -m)",
+            "run_shell_command(git pull)",
+            "run_shell_command(git checkout -b)",
+            "run_shell_command(git push)",
+            "run_shell_command(npm ci)",
+            "run_shell_command(npm audit)",
+            "run_shell_command(npm run tsc)",
+            "run_shell_command(npm run test)",
+            "run_shell_command(npm run build)",
+            "glob",
+            "list_directory",
+            "search_file_content",
+            "read_file",
+            "read_many_files",
+            "write_file",
+            "replace"
+        ],
+        "exclude": [
+            "run_shell_command(rm -rf)",
+            "run_shell_command(git push -f)",
+            "run_shell_command(git push --force)"
+        ]
+    },
+    "context": {
+        "fileName": [
+            "GEMINI.md"
+        ]
+    },
+    "advanced": {
+        "excludedEnvVars": [
+            "DEBUG",
+            "DEBUG_MODE",
+            "NODE_ENV"
+        ]
+    }
+}
