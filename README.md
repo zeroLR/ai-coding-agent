@@ -80,6 +80,26 @@ docker run --env-file .env -v ./:/workspace ai-coding-agent gemini -m gemini-2.5
 | Hanging run                  | Network / provider latency | Retry with smaller prompt or different model. |
 | No changes applied           | `dry_run` mode enabled     | Use `--approval-mode auto_edit` or `ask`.     |
 
+## GitHub Actions Integration
+
+This repository includes an example GitHub Actions workflow that demonstrates how to use the AI Coding Agent in CI/CD pipelines.
+
+### Quick Setup
+
+1. **Add GEMINI_API_KEY Secret**: Go to your repository **Settings** → **Secrets and variables** → **Actions** and add `GEMINI_API_KEY` with your Gemini API key
+2. **Run Workflow**: Navigate to **Actions** tab → **AI Coding Agent Example** → **Run workflow**
+3. **Configure Task**: Enter your task description and choose approval mode
+
+See [GitHub Actions Setup Guide](docs/github-actions-setup.md) for detailed instructions.
+
+### Example Workflows
+
+The included workflow demonstrates several use cases:
+- **Repository Analysis**: Analyze project structure and provide insights
+- **Code Quality Checks**: Review code for improvements and security issues
+- **Documentation Review**: Check and suggest documentation improvements
+- **Automated File Modifications**: Create or modify files based on AI recommendations
+
 ### Contributing
 
 Pull requests welcome. Please keep changes small and focused. If adding a dependency, explain why in the PR description.

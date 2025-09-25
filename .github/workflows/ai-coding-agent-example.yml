@@ -1,0 +1,119 @@
+name: AI Coding Agent Example
+
+# Example workflow demonstrating how to use the AI Coding Agent Docker image
+# with GEMINI_API_KEY secret for automated code tasks
+
+on:
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      task_description:
+        description: 'Task for the AI agent to perform'
+        required: false
+        default: 'List all files in the repository and provide a brief overview'
+      approval_mode:
+        description: 'Approval mode for file changes'
+        required: false
+        default: 'ask'
+        type: choice
+        options:
+          - ask
+          - auto_edit
+          - dry_run
+
+  # Uncomment to run on specific events (optional)
+  # push:
+  #   branches: [ main ]
+  # pull_request:
+  #   branches: [ main ]
+
+env:
+  # Use the published image from GitHub Container Registry
+  AI_AGENT_IMAGE: ghcr.io/zerolr/ai-coding-agent:main
+
+jobs:
+  ai-coding-task:
+    runs-on: ubuntu-latest
+    
+    # Required permissions for the workflow
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull AI Coding Agent image
+        run: docker pull ${{ env.AI_AGENT_IMAGE }}
+
+      - name: Run AI Coding Agent - Repository Analysis
+        env:
+          API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          docker run --rm \
+            -e API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+            -v "${{ github.workspace }}":/workspace \
+            ${{ env.AI_AGENT_IMAGE }} \
+            gemini -m "gemini-2.5-flash-lite" --approval-mode dry_run \
+            "${{ github.event.inputs.task_description || 'List all files in the repository and provide a brief overview of the project structure' }}"
+
+      - name: Run AI Coding Agent - Code Quality Check
+        env:
+          API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          docker run --rm \
+            -e API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+            -v "${{ github.workspace }}":/workspace \
+            ${{ env.AI_AGENT_IMAGE }} \
+            gemini -m "gemini-2.5-flash-lite" --approval-mode dry_run \
+            "Review the Dockerfile and entrypoint.sh for potential improvements or security issues"
+
+      - name: Run AI Coding Agent - Documentation Check
+        env:
+          API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          docker run --rm \
+            -e API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+            -v "${{ github.workspace }}":/workspace \
+            ${{ env.AI_AGENT_IMAGE }} \
+            gemini -m "gemini-2.5-flash-lite" --approval-mode dry_run \
+            "Check if the README.md is up to date and suggest any improvements"
+
+      # Example of using the agent for file modification (use with caution)
+      - name: Run AI Coding Agent - File Modification Example
+        if: github.event.inputs.approval_mode != 'dry_run'
+        env:
+          API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          docker run --rm \
+            -e API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+            -v "${{ github.workspace }}":/workspace \
+            ${{ env.AI_AGENT_IMAGE }} \
+            gemini -m "gemini-2.5-flash-lite" --approval-mode "${{ github.event.inputs.approval_mode }}" \
+            "${{ github.event.inputs.task_description }}"
+
+      # Commit changes if any were made (only when approval_mode is auto_edit)
+      - name: Commit AI agent changes
+        if: github.event.inputs.approval_mode == 'auto_edit'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "AI Coding Agent automated changes
+
+            Task: ${{ github.event.inputs.task_description }}
+            Approval mode: ${{ github.event.inputs.approval_mode }}
+            Triggered by: ${{ github.actor }}"
+            git push
+          fi
