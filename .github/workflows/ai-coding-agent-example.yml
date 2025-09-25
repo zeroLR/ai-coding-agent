@@ -94,5 +94,5 @@ jobs:
             Task: ${{ github.event.inputs.task_description }}
             Approval mode: ${{ github.event.inputs.approval_mode }}
             Triggered by: ${{ github.actor }}"
-            git push
+            git push --set-upstream origin "ai-coding-agent-changes-${{ github.run_id }}"
           fi
