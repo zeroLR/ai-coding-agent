@@ -17,9 +17,9 @@ on:
         default: 'ask'
         type: choice
         options:
-          - ask
+          - default
           - auto_edit
-          - dry_run
+          - yolo
 
   # Uncomment to run on specific events (optional)
   # push:
@@ -34,7 +34,7 @@ env:
 jobs:
   ai-coding-task:
     runs-on: ubuntu-latest
-    
+
     # Required permissions for the workflow
     permissions:
       contents: read
