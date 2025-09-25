@@ -7,14 +7,27 @@ on:
   # Manual trigger for testing
   workflow_dispatch:
     inputs:
+      model:
+        description: "AI model to use"
+        required: false
+        default: "gemini-1.5-flash-8b"
+        type: choice
+        options:
+          - gemini-1.5-flash-8b
+          - gemini-1.5-flash
+          - gemini-2.0-flash-lite
+          - gemini-2.0-flash
+          - gemini-2.5-flash-lite
+          - gemini-2.5-flash
+          - gemini-2.5-pro
       task_description:
-        description: 'Task for the AI agent to perform'
+        description: "Task for the AI agent to perform"
         required: false
-        default: 'List all files in the repository and provide a brief overview'
+        default: "List all files in the repository and provide a brief overview"
       approval_mode:
-        description: 'Approval mode for file changes'
+        description: "Approval mode for file changes"
         required: false
-        default: 'ask'
+        default: "ask"
         type: choice
         options:
           - default
@@ -54,7 +67,7 @@ jobs:
       - name: Pull AI Coding Agent image
         run: docker pull ${{ env.AI_AGENT_IMAGE }}
 
-      - name: Run AI Coding Agent - Repository Analysis
+      - name: Run AI Coding Agent - Customized Prompt or Repository Analysis
         env:
           API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
@@ -62,43 +75,8 @@ jobs:
             -e API_KEY="${{ secrets.GEMINI_API_KEY }}" \
             -v "${{ github.workspace }}":/workspace \
             ${{ env.AI_AGENT_IMAGE }} \
-            gemini -m "gemini-2.5-flash-lite" --approval-mode dry_run \
+            gemini -m "${{ github.event.inputs.model }}" --approval-mode "${{ github.event.inputs.approval_mode }}" \
             "${{ github.event.inputs.task_description || 'List all files in the repository and provide a brief overview of the project structure' }}"
-
-      - name: Run AI Coding Agent - Code Quality Check
-        env:
-          API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          docker run --rm \
-            -e API_KEY="${{ secrets.GEMINI_API_KEY }}" \
-            -v "${{ github.workspace }}":/workspace \
-            ${{ env.AI_AGENT_IMAGE }} \
-            gemini -m "gemini-2.5-flash-lite" --approval-mode dry_run \
-            "Review the Dockerfile and entrypoint.sh for potential improvements or security issues"
-
-      - name: Run AI Coding Agent - Documentation Check
-        env:
-          API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          docker run --rm \
-            -e API_KEY="${{ secrets.GEMINI_API_KEY }}" \
-            -v "${{ github.workspace }}":/workspace \
-            ${{ env.AI_AGENT_IMAGE }} \
-            gemini -m "gemini-2.5-flash-lite" --approval-mode dry_run \
-            "Check if the README.md is up to date and suggest any improvements"
-
-      # Example of using the agent for file modification (use with caution)
-      - name: Run AI Coding Agent - File Modification Example
-        if: github.event.inputs.approval_mode != 'dry_run'
-        env:
-          API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          docker run --rm \
-            -e API_KEY="${{ secrets.GEMINI_API_KEY }}" \
-            -v "${{ github.workspace }}":/workspace \
-            ${{ env.AI_AGENT_IMAGE }} \
-            gemini -m "gemini-2.5-flash-lite" --approval-mode "${{ github.event.inputs.approval_mode }}" \
-            "${{ github.event.inputs.task_description }}"
 
       # Commit changes if any were made (only when approval_mode is auto_edit)
       - name: Commit AI agent changes
@@ -106,6 +84,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          git checkout -b "ai-coding-agent-changes-${{ github.run_id }}"
           git add .
           if git diff --staged --quiet; then
             echo "No changes to commit"
