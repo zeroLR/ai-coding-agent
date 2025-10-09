@@ -4,7 +4,7 @@ FROM node:22-slim
 # Set working directory
 WORKDIR /workspace
 
-# Install system dependencies (including git)
+# Install system dependencies (including git and expect)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*

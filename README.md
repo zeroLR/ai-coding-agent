@@ -14,22 +14,46 @@ An experimental, containerized command-line AI coding assistant. It mounts your 
 	```env
 	API_KEY=your_key_here
 	```
-- configure `.gemini/settings.json` to set up the Gemini CLI (or equivalent for other providers)
+- configure `gemini/.gemini/settings.json` to set up the Gemini CLI (or equivalent for other providers)
 
 ## Build
 
+Build locally for each CLI image:
+
 ```sh
-docker build -t ai-coding-agent .
+# Gemini image
+docker build -t gemini-coding-agent gemini
+
+# Copilot image
+docker build -t copilot-coding-agent copilot
+```
+
+Or pull from GHCR after a tagged release (replace <owner> with your GitHub username or org):
+
+```sh
+docker pull ghcr.io/<owner>/gemini-coding-agent:latest
+docker pull ghcr.io/<owner>/copilot-coding-agent:latest
 ```
 
 ## Usage Overview
 
-General form:
+General forms (choose one image):
+
+Gemini:
 ```sh
 docker run --rm \
 	--env-file .env \
 	-v "$(pwd)":/workspace \
-	ai-coding-agent <provider|command> [options] -- <free-form prompt>
+	ghcr.io/<owner>/gemini-coding-agent \
+	gemini [options] -- <free-form prompt>
+```
+
+Copilot:
+```sh
+docker run --rm \
+	-v "$(pwd)":/workspace \
+	ghcr.io/<owner>/copilot-coding-agent \
+	copilot [options]
 ```
 
 ### Read / Explain an Image
@@ -37,38 +61,28 @@ docker run --rm \
 Use `@image/<path>` inside the prompt. The path is relative to the mounted workspace root.
 
 ```sh
-docker run --env-file .env -v ./:/workspace ai-coding-agent \
+docker run --rm --env-file .env -v "$(pwd)":/workspace ghcr.io/<owner>/gemini-coding-agent \
 	gemini --approval-mode auto_edit -m "gemini-1.5-flash-8b" \
 	"Explain the content of @image/example.png and list key metrics."
 ```
-
-Example (truncated) output explanation:
-> The image shows a comparison of Free vs Paid tiers for "Gemini 2.5 Flash-Lite" including input/output/latency token costs, Google Search integration limits, and product improvement policy.
-
 ### Create a File
 
 If the agent supports file creation via prompt (pattern example):
+
 ```sh
-docker run --env-file .env -v ./:/workspace ai-coding-agent \
+docker run --rm --env-file .env -v "$(pwd)":/workspace ghcr.io/<owner>/gemini-coding-agent \
 	gemini -m "gemini-2.5-flash-lite" --approval-mode auto_edit \
 	"Create a new file at src/hello.py that prints 'Hello AI Agent' when executed."
 ```
-Depending on approval mode, the file is written automatically or a diff is shown for confirmation.
-
-### Modify a File
-
 ```sh
-docker run --env-file .env -v ./:/workspace ai-coding-agent \
+docker run --rm --env-file .env -v "$(pwd)":/workspace ghcr.io/<owner>/gemini-coding-agent \
 	gemini -m "gemini-2.5-flash-lite" --approval-mode auto_edit \
 	"Update README.md to add a Troubleshooting section with common errors."
 ```
-
-### Development Workflow
-
-Iterate locally without rebuilding image each time by mounting the code; rebuild only after dependency changes:
 ```sh
-docker build -t ai-coding-agent .
-docker run --env-file .env -v ./:/workspace ai-coding-agent gemini -m gemini-2.5-flash-lite "List repository files"
+docker build -t gemini-coding-agent gemini
+docker run --env-file .env -v "$(pwd)":/workspace gemini-coding-agent \
+	gemini -m gemini-2.5-flash-lite "List repository files"
 ```
 
 ### Troubleshooting
